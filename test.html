@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <title>Document</title>
+  </head>
+  <body>
+    <p>Scatter plot</p>
+    <div id="scatter-graph"></div>
+
+    <script>
+      let items = [
+        {
+          name: "Azure (PaaS)",
+          x: 10,
+          y: 8.5,
+        },
+        {
+          name: "Mobile Applications",
+          x: 2,
+          y: 7,
+        },
+        {
+          name: "Responsive Design",
+          x: 1,
+          y: 8,
+        },
+        {
+          name: "PhoneGap/Cordova",
+          x: 1.5,
+          y: 9,
+        },
+        {
+          name: "Salesforce1 (PaaS)",
+          x: 7,
+          y: 7,
+        },
+        {
+          name: "AngularJS",
+          x: 9,
+          y: 9,
+        },
+        {
+          name: "Titanium",
+          x: 5.5,
+          y: 5.5,
+        },
+        {
+          name: "d3.js",
+          x: 8,
+          y: 6,
+        },
+        {
+          name: "scala",
+          x: 1,
+          y: 1,
+        },
+        {
+          name: "NoSQL",
+          x: 3,
+          y: 2,
+        },
+      ];
+
+
+
+      let margins = {
+        left: 60,
+        right: 30,
+        top: 30,
+        bottom: 30,
+      };
+
+      let width = 500;
+      let height = 500;
+      let offset = 30;
+      let domainwidth = width - margins.left - margins.right - offset;
+      let domainheight = height - margins.top - margins.bottom - offset;
+
+      var simulation = d3.forceSimulation()
+      .force("charge", d3.forceManyBody().strength(5))
+      .force("collide", d3.forceCollide(9))
+
+      // svg canvas
+      let svg = d3
+        .select("#scatter-graph")
+        .append("svg")
+        .attr("width", width)
+        .attr("height", height)
+        .append("g")
+        .attr(
+          "transform",
+          "translate(" + margins.left + "," + margins.top + ")"
+        );
+
+      // scaling data based on canvas width and height
+      let x = d3.scaleLinear().domain([-50, 50]).range([0, domainwidth]);
+      let y = d3.scaleLinear().domain([-50, 50]).range([domainheight, 0]);
+
+      // placeholder for axis to be entered later
+      svg
+        .append("g")
+        .attr("class", "x axis")
+        .attr("transform", "translate(0," + y.range()[0] + ")");
+      svg.append("g").attr("class", "y axis");
+
+      // top bottom left right labels
+      let xaxislabelbottom = "Order tolerant";
+      let xaxislabeltop = "Chaos Tolerant";
+      let yaxislabelleft = "Team Driven";
+      let yaxislabelright = "Self Driven";
+
+      svg
+        .append("text")
+        .attr("fill", "#414241")
+        .attr("text-anchor", "end")
+        .attr("x", width / 2)
+        .attr("y", height - 45)
+        .text(xaxislabelbottom);
+
+      svg
+        .append("text")
+        .attr("fill", "#414241")
+        .attr("text-anchor", "end")
+        .attr("x", width / 2)
+        .attr("y", -10)
+        .text(xaxislabeltop);
+
+      svg
+        .append("text")
+        .attr("fill", "#414241")
+        .attr("text-anchor", "end")
+        .attr("x", -170)
+        .attr("y", -30)
+        .attr("transform", "rotate(-90)")
+        .text(yaxislabelleft);
+
+      svg
+        .append("text")
+        .attr("fill", "#414241")
+        .attr("text-anchor", "end")
+        .attr("x", width / 2)
+        .attr("y", -390)
+        .attr("transform", "rotate(90)")
+        .text(yaxislabelright);
+
+      //creating axis
+      let xAxis = d3.axisBottom().scale(x).tickPadding(3);
+      let yAxis = d3.axisLeft().scale(y).tickPadding(3);
+
+      //select placeholder axis and draw
+      svg.selectAll("g.y.axis").call(yAxis);
+      svg.selectAll("g.x.axis").call(xAxis);
+
+      // quadrant grid: horizontal rules
+      let hr_width = 410;
+      svg
+        .append("g")
+        .attr("class", "qxgrid")
+        .call(xAxis.tickFormat("").tickSize(hr_width).ticks(2));
+
+      svg
+        .select("g.qxgrid")
+        .selectAll(".tick")
+        .style("opacity", 0.4)
+        .style("stroke", "#000");
+
+      // quadrant grid: vertical rules
+      let vr_length = -380;
+      svg
+        .append("g")
+        .attr("class", "qygrid")
+        .call(yAxis.tickFormat("").tickSize(vr_length).ticks(2));
+
+      svg
+        .select("g.qygrid")
+        .selectAll(".tick")
+        .style("opacity", 0.4)
+        .style("stroke", "#000");
+
+        
+        // associating each node with name data (like key)
+        let item = svg.selectAll("g .node").data(items, function (d) {
+          return d.name;
+        });
+
+        //create group from data
+        let itemGroup = item
+          .enter()
+          .append("g")
+          .attr("class", "node")
+          .attr("transform", function (d) {
+            return "translate(" + x(d.x) + "," + y(d.y) + ")";
+          });
+
+        //drawing circle
+        let circle_radius = 4;
+        itemGroup
+          .append("circle")
+          .attr("r", circle_radius)
+          .attr("class", "dot")
+          .style("opacity", 0.6)
+          .style("fill", "#000");
+
+        // now we add some text, so we can see what each item is.
+        let node_name = itemGroup
+          .append("text")
+          .attr("class", "name")
+          .style("text-anchor", "middle")
+          .attr("dy", -10)
+          .text(function (d) {
+            return d.name;
+          });
+
+          console.log(node_name._groups[0])
+        
+        //   simulation
+        //   .nodes(items)
+        //   .force("collision", d3.forceManyBody(items).strength(-10))
+        //   .on("tick", function(d){
+        //     node_name
+        //         .attr("x", function(d){ return d.x; })
+        //         .attr("y", function(d){ return d.y; })
+        //   });
+
+
+    </script>
+  </body>
+</html>
