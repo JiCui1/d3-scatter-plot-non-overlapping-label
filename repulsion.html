@@ -1,68 +1,39 @@
-<!DOCTYPE html>
-<html lang="en">
+<html>
   <head>
-    <meta charset="UTF-8" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <script src="https://d3js.org/d3.v7.min.js"></script>
-    <title>Document</title>
+    <script src="https://d3js.org/d3.v5.min.js"></script>
   </head>
+
   <body>
-    <p>Scatter plot</p>
-    <div id="scatter-graph"></div>
+    <svg id="scatterplot" width="500" height="500"></svg>
 
     <script>
-      let items = [
+      // Toy data with 5 points
+      let data = [
         {
-          name: "Azure (PaaS)",
-          x: 40,
-          y: 8.5,
+          x: 50,
+          y: 50,
+          name: "James Bond",
         },
         {
-          name: "Mobile Applications",
-          x: -30,
-          y: 20,
+          x: 55,
+          y: 55,
+          name: "James Bond",
         },
         {
-          name: "Responsive Design",
-          x: 30,
-          y: -30,
+          x: 60,
+          y: 65,
+          name: "James Bond",
         },
-        // {
-        //   name: "PhoneGap/Cordova",
-        //   x: -20,
-        //   y: -20,
-        // },
-        // {
-        //   name: "Salesforce1 (PaaS)",
-        //   x: -15,
-        //   y: 30,
-        // },
-        // {
-        //   name: "AngularJS",
-        //   x: 20,
-        //   y: 20,
-        // },
-        // {
-        //   name: "Titanium",
-        //   x: 5.5,
-        //   y: -10,
-        // },
-        // {
-        //   name: "d3.js",
-        //   x: -20,
-        //   y: 6,
-        // },
-        // {
-        //   name: "scala",
-        //   x: 30,
-        //   y: -20,
-        // },
-        // {
-        //   name: "NoSQL",
-        //   x: 3,
-        //   y: 2,
-        // },
+        {
+          x: 130,
+          y: 165,
+          name: "James Bond",
+        },
+        {
+          x: 130,
+          y: 165,
+          name: "James Bond",
+        },
       ];
 
       let margins = {
@@ -78,14 +49,9 @@
       let domainwidth = width - margins.left - margins.right - offset;
       let domainheight = height - margins.top - margins.bottom - offset;
 
-      var simulation = d3
-        .forceSimulation()
-        .force("charge", d3.forceManyBody().strength(5))
-        .force("collide", d3.forceCollide(9));
-
       // svg canvas
       let svg = d3
-        .select("#scatter-graph")
+        .select("#scatterplot")
         .append("svg")
         .attr("width", width)
         .attr("height", height)
@@ -180,8 +146,7 @@
         .style("opacity", 0.4)
         .style("stroke", "#000");
 
-      // associating each node with name data (like key)
-      let item = svg.selectAll("g .node").data(items, function (d) {
+      let item = svg.selectAll("g .node").data(data, function (d) {
         return d.name;
       });
 
@@ -203,10 +168,11 @@
         .style("opacity", 0.6)
         .style("fill", "#000");
 
-      let sim = d3.forceSimulation(items);
+      // Creates force simulation that, when enabled, allows points to repel each other
+      let sim = d3.forceSimulation(data);
       sim.force(
         "collision",
-        d3.forceCollide((d) => d.name.length * 10)
+        d3.forceCollide((d) => d.r)
       ); // Repulsion force
       sim.force(
         "x_force",
@@ -216,61 +182,62 @@
         "y_force",
         d3.forceY((d) => d.y)
       );
-      sim.on("tick", drawPlot);
+      sim.on("tick", drawPlot); // Redraws scatterplot at every simulation "tick"
+
+      // Uncomment both lines below lets simulation run forever with obvious movements
+      // sim.alphaDecay(0); // Allows simulation to run forever, numerically
+      // sim.velocityDecay(0); // Movements become obvious
 
       sim.stop(); // Simulation is off initially
       drawPlot(); // Draws scatterplot (points overlap as simulation is off)
 
-      console.log(itemGroup);
-
+      /**
+       * Draws points and labels in scatterplot as described in data.
+       * For points and labbels that are already drawn, update their locations,
+       * using (updated) values in data.
+       */
       function drawPlot() {
-        let labels = itemGroup.select("text").data(items);
+        let bg_rect = d3.select("#scatterplot").selectAll("rect").data(data);
+        let labels = d3.select("#scatterplot").selectAll(".name").data(data);
+
+        // For new points and labels (not drawn yet, e.g., when page loads), draw them
+        bg_rect
+          .enter()
+          .append("rect")
+          .attr("x", (d) => d.x + 10)
+          .attr("y", (d) => d.y + 13)
+          .attr("width", (d) => d.name.length * 10)
+          .attr("height", 25)
+          .attr("fill", "#000")
+          .attr("fill-opacity", "0.5");
 
         labels
           .enter()
           .append("text")
-          .text(function (d) {
-            return d.name;
-          });
-        // .attr("x", function (d) {
-        //   return d.x;
-        // })
-        // .attr("y", function (d) {
-        //   return d.y;
-        // });
-        // .style("color", "#000");
+          .text((d) => d.name)
+          .attr("class", "name")
+          .attr("x", (d) => d.x + 10)
+          .attr("y", (d) => d.y)
+          .attr("alignment-baseline", "middle") // Vertically align text with point
+          .style("fill", "#fff")
+          .style("font-family", "sans-serif")
+          .style("font-size", "13px");
 
         // For existing points already drawn, update their locations,
         // using (updated) values in data
+        bg_rect.attr("x", (d) => d.x).attr("y", (d) => d.y);
         labels
-          // .text((d) => d.x + ", " + d.y)
-          .attr("x", (d) => d.x)
-          .attr("y", (d) => d.y);
+          // .text(d => d.x + ", " + d.y)
+          .attr("x", (d) => d.x + 10)
+          .attr("y", (d) => d.y + 13);
       }
 
-      // let rect = itemGroup
-      //   .append("rect")
-      //   .attr("transform", function (d) {
-      //     let x = -d.name.length * 4.5;
-      //     return "translate(" + x + ",-30)";
-      //   })
-      //   .attr("width", function (d) {
-      //     return d.name.length * 9;
-      //   })
-      //   .attr("height", 23)
-      //   .style("opacity", 0.5);
+      sim.force(
+        "collision",
+        d3.forceCollide((d) => 50)
+      );
 
-      // let text = itemGroup
-      //   .append("text")
-      //   .attr("class", "name")
-      //   .style("text-anchor", "middle")
-      //   .attr("dy", -13)
-      //   .style("font-family", "arial")
-      //   .style("font-size", "13px")
-      //   .style("fill", "#fff")
-      //   .text(function (d) {
-      //     return d.name;
-      //   });
+      sim.restart();
     </script>
   </body>
 </html>
